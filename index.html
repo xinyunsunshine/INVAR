@@ -16,6 +16,15 @@
   <title>INVAR · Randomization-Invariant Visual Representations for Zero-Shot Sim-to-Real</title>
   <link rel="stylesheet" href="style.css?v=20261104-release-3">
   <script src="script.js?v=20261103-9" defer></script>
+
+  <style>
+    .title-copy .authors .author-name { display: inline-block; padding: 0; color: inherit; white-space: nowrap; }
+    .title-copy sup { color: #e4cf8b; font-size: .65em; margin-left: .15em; vertical-align: super; }
+    .title-copy .affiliations { display: flex; flex-wrap: wrap; justify-content: center; gap: .3em 1.15em; margin: 14px auto 0; max-width: 1000px; color: #f0e2b4; font-size: clamp(.75rem, 1.1vw, .95rem); line-height: 1.6; }
+    .title-copy .affiliations span { white-space: nowrap; }
+    .title-copy .internship-credit { margin: 7px 0 0; color: #ddd; font-size: clamp(.7rem, .95vw, .82rem); line-height: 1.5; }
+    @media (max-width: 700px) { .title-copy .affiliations { gap: .2em .9em; margin-top: 10px; } }
+  </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -36,7 +45,9 @@
     <div class="title-shade" aria-hidden="true"></div>
     <div class="title-copy"><h1>INVAR</h1>
       <p class="subtitle">Randomization-Invariant Visual Representations<br class="desktop"> for Zero-Shot Sim-to-Real</p>
-      <p class="authors">Sunshine Jiang, Shuo Cheng, Francois Robert Hogan, Matthew Chang,<br class="desktop"> Tingfan Wu, Jitendra Malik, Karen Liu, Nur Muhammad Mahi Shafiullah, Akash Sharma</p>
+      <p class="authors"><span class="author-name">Sunshine Jiang<sup>1,2,3</sup>,</span> <span class="author-name">Shuo Cheng<sup>1,5</sup>,</span> <span class="author-name">Francois Robert Hogan<sup>1</sup>,</span> <span class="author-name">Matthew Chang<sup>1</sup>,</span> <span class="author-name">Tingfan Wu<sup>1</sup>,</span> <span class="author-name">Jitendra Malik<sup>1,4</sup>,</span> <span class="author-name">Karen Liu<sup>1,2</sup>,</span> <span class="author-name">Nur Muhammad Mahi Shafiullah<sup>1,4</sup>,</span> <span class="author-name">Akash Sharma<sup>1</sup></span></p>
+      <p class="affiliations" aria-label="Author affiliations"><span><sup>1</sup> Amazon FAR</span> <span><sup>2</sup> Stanford University</span> <span><sup>3</sup> MIT</span> <span><sup>4</sup> UC Berkeley</span> <span><sup>5</sup> Georgia Tech</span></p>
+      <p class="internship-credit">Work done during an internship at Amazon FAR.</p>
     </div>
     <div class="title-controls"><button type="button" id="title-replay">Replay ↻</button><button type="button" id="title-motion" aria-pressed="true">Pause video Ⅱ</button></div>
   </div>
