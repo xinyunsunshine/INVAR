@@ -531,3 +531,5 @@ body{background:linear-gradient(180deg,#484746 900px,#242426 2100px,#111113 4500
 .release-links a:hover { background: #ece1c4; color: #151517; }
 .release-links a:focus-visible { outline: 3px solid #6b8ad7; outline-offset: 4px; }
 @media(max-width: 600px) { .title-copy .authors { font-size: .76rem; line-height: 1.45; } }
+
+.baseline-context { display: block; margin-bottom: 4px; color: #a9a9b0; font-size: 12px; line-height: 1.5; }
