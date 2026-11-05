@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://xinyunsunshine.github.io/INVAR/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="INVAR · Randomization-Invariant Visual Representations for Zero-Shot Sim-to-Real">
+  <meta property="og:description" content="Learn visual invariance once in simulation. Reuse one frozen encoder across robot tasks for zero-shot sim-to-real transfer.">
+  <meta property="og:url" content="https://xinyunsunshine.github.io/INVAR/">
+  <meta property="og:image" content="https://xinyunsunshine.github.io/INVAR/assets/story/title-tiles/invar-pour.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="description" content="INVAR trains a visual encoder in simulation and reuses it across robot tasks, with no real-world images for encoder or policy training.">
+  <meta name="theme-color" content="#151517">
+  <title>INVAR · Randomization-Invariant Visual Representations for Zero-Shot Sim-to-Real</title>
+  <link rel="stylesheet" href="style.css?v=20261104-release-1">
+  <script src="script.js?v=20261103-9" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<nav class="nav" aria-label="Page sections"><a class="wordmark" href="#top">INVAR<span>↗</span></a><div><a href="#idea">Idea</a><a href="#analysis">Analysis</a><a href="#method">Method</a><a href="#results">Results</a><a href="#scaling">Scaling</a><a href="#tradeoffs">Trade-offs</a></div></nav>
+<header id="top" class="hero wrap">
+  <div class="title-film">
+    <div class="title-media"><div id="title-grid" class="title-grid title-intro">
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/grasp-spray.jpg" src="assets/story/title-tiles/grasp-spray.mp4" aria-label="Spray-bottle grasp"></video>
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/invar-bottles.jpg" src="assets/story/title-tiles/invar-bottles.mp4?v=20261020-2" aria-label="Bottles into a bin"></video>
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/grasp-glass.jpg" src="assets/story/title-tiles/grasp-glass.mp4" aria-label="Wine-glass grasp"></video>
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/grasp-watering.jpg" src="assets/story/title-tiles/grasp-watering.mp4" aria-label="Watering-can grasp"></video>
+      <video id="title-video" data-title-autoplay data-playback-rate="1" muted loop playsinline preload="auto" poster="assets/story/wine-pour-sim-real.jpg" src="assets/story/wine-pour-sim-real.mp4" aria-label="Wine pouring with a sliding comparison between the real robot and simulation"></video>
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/invar-mug.jpg" src="assets/story/title-tiles/invar-mug.mp4" aria-label="Flip a mug"></video>
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/grasp-tape.jpg" src="assets/story/title-tiles/grasp-tape.mp4" aria-label="Tape grasp"></video>
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/robust-bottles.jpg" src="assets/story/title-tiles/robust-bottles.mp4" aria-label="Bottles into a bin in another scene"></video>
+      <video data-title-autoplay data-playback-rate="3" muted loop playsinline preload="metadata" poster="assets/story/title-tiles/grasp-hammer.jpg" src="assets/story/title-tiles/grasp-hammer.mp4" aria-label="Hammer grasp"></video>
+    </div></div>
+    <div class="title-shade" aria-hidden="true"></div>
+    <div class="title-copy"><h1>INVAR</h1>
+      <p class="subtitle">Randomization-Invariant Visual Representations<br class="desktop"> for Zero-Shot Sim-to-Real</p>
+      <p class="authors">Sunshine Jiang, Shuo Cheng, Francois Robert Hogan, Matthew Chang,<br class="desktop"> Tingfan Wu, Jitendra Malik, Karen Liu, Nur Muhammad Mahi Shafiullah, Akash Sharma</p>
+    </div>
+    <div class="title-controls"><button type="button" id="title-replay">Replay ↻</button><button type="button" id="title-motion" aria-pressed="true">Pause video Ⅱ</button></div>
+  </div>
+  <div class="release-links" aria-label="Project resources"><a href="https://github.com/xinyunsunshine/INVAR">Project repository <span aria-hidden="true">↗</span></a><a href="#results">Explore results <span aria-hidden="true">↓</span></a></div>
+  <div class="hero-body">
+  <div class="hero-attention">
+    <h2 class="attention-headline">INVAR representation works across embodiments, tasks and scenes.</h2>
+    <div class="hero-stage-head"><span class="live-dot"></span> Encoder attention maps on real-world rollouts <button type="button" id="hero-motion" aria-pressed="true">Pause videos <span aria-hidden="true">Ⅱ</span></button></div>
+    <div class="hero-column-labels"><span>RGB observation</span><span>DINOv3</span><span>CAIP</span><span class="ours-label">INVAR (ours)</span></div>
+    <figure><video data-autoplay autoplay muted loop playsinline preload="metadata" poster="assets/story/attention-robot.jpg?v=20261103-4" src="assets/story/attention-robot.mp4?v=20261103-4" aria-label="Spray-bottle grasping: RGB observation, DINOv3, CAIP, and INVAR (ours) attention"></video><figcaption><span>01</span> Dexterous spray-bottle grasping <small>Attention on the bottle and hand.</small></figcaption></figure>
+    <figure><video data-autoplay autoplay muted loop playsinline preload="metadata" poster="assets/story/attn-bottles.jpg?v=20261103-4" src="assets/story/attn-bottles.mp4?v=20261103-4" aria-label="Bimanual manipulation: RGB observation, DINOv3, CAIP, and INVAR (ours) attention"></video><figcaption><span>02</span> Bimanual manipulation</figcaption></figure>
+    <div class="hero-highlights">
+      <div><strong><em>2×</em> real-world success rate</strong><small>vs. finetuned DINOv3</small></div>
+      <div><strong><em>1.5×</em> faster convergence</strong><small>for policy training</small></div>
+    </div>
+  </div>
+  <div class="tldr"><strong>TL;DR</strong><p>INVAR learns a visual representation from diverse simulation randomizations, then freezes it for reuse across tasks. Policies trained on clean simulation images transfer zero-shot to real robots.</p></div>
+  </div>
+</header>
+<main id="main">
+<section id="idea" class="section wrap">
+  <div class="section-heading"><span class="index">01 / THE IDEA</span><h2>Learn invariance once. Reuse it for every new policy.</h2><p>Standard domain randomization couples visual invariance to task-specific policy weights. Every new policy must learn these invariances from scratch. INVAR separates representation learning from policy optimization, so the same frozen encoder can be reused across downstream tasks.</p></div>
+  <div class="approach-comparison">
+  <h3 class="approach-heading">Prior approach</h3>
+  <div class="approach-stage" id="prior-approach-stage" data-mode="prior">
+    <figure class="pipeline-image clean-source"><span class="overline">Clean simulation</span><img src="assets/story/clean-bottles.webp" alt="Clean simulation of bimanual bottle manipulation" width="896" height="672"><figcaption >Start from the nominal scene</figcaption></figure>
+    <div class="flow-edge random-edge"><span>Randomize</span><i></i></div>
+    <figure class="pipeline-image random-source"><span class="overline">Re-render randomized simulation</span><img src="assets/story/random-bottles.webp" alt="The same task with randomized materials, lighting, and background" width="896" height="672"><figcaption>Repeat for every new task</figcaption></figure>
+    <div class="flow-edge"><i></i></div>
+    <div class="encoder network-block"><strong>Vision encoder</strong><small>FROZEN / FINETUNED</small></div>
+    <div class="flow-edge"><i></i></div><div class="policy"><span>TRAIN</span><strong>Policy π</strong></div>
+    <div class="flow-edge"><i></i></div>
+    <figure class="approach-out"><span class="overline">Real-world deployment</span><video data-rollout-autoplay id="prior-approach-video" controls muted loop playsinline preload="none" poster="assets/story/baseline-bottles.jpg" src="assets/story/baseline-bottles.mp4" aria-label="Prior approach bottle manipulation failure example"></video><figcaption>Appearance changes can disrupt execution</figcaption></figure>
+  </div>
+  <p class="callout"><strong>Randomize for every new policy.</strong> Each policy learns the task and how to handle changes in appearance.</p>
+  <h3 class="approach-heading">INVAR (ours)</h3>
+  <div class="approach-stage" id="approach-stage" data-mode="invar">
+    <figure class="pipeline-image clean-source"><span class="overline">Clean simulation</span><img src="assets/story/clean-bottles.webp" alt="Clean simulation of bimanual bottle manipulation" width="896" height="672"><figcaption id="input-caption">Clean images for each new policy</figcaption></figure>
+    <div class="flow-edge random-edge" hidden><span>Randomize</span><i></i></div>
+    <figure class="pipeline-image random-source" hidden><span class="overline">Re-render randomized simulation</span><img src="assets/story/random-bottles.webp" alt="The same task with randomized materials, lighting, and background" width="896" height="672"><figcaption>Repeat for every new task</figcaption></figure>
+    <div class="flow-edge"><i></i></div>
+    <div class="encoder network-block frozen"><span class="snowflake" id="idea-snowflake" aria-hidden="true">❄</span><strong id="encoder-name">INVAR</strong><small id="encoder-state">FROZEN ENCODER</small></div>
+    <div class="flow-edge"><i></i></div><div class="policy"><span>TRAIN</span><strong>Policy π</strong></div>
+    <div class="flow-edge"><i></i></div>
+    <figure class="approach-out"><span class="overline">Real-world deployment</span><video data-rollout-autoplay id="approach-video" controls muted loop playsinline preload="none" poster="assets/story/invar-bottles.jpg" src="assets/story/invar-bottles.mp4?v=20261020-2" aria-label="INVAR real-world bottle manipulation example"></video><figcaption id="output-caption">Zero-shot transfer</figcaption></figure>
+  </div>
+  <p class="callout"><strong>Randomize during encoder pretraining.</strong> Freeze INVAR and train each new policy on clean simulation images.</p>
+  </div>
+</section>
+<section id="analysis" class="section tinted">
+ <div class="wrap">
+ <div class="section-heading"><span class="index">02 / INSIDE THE REPRESENTATION</span><h2>Visual invariance across <br>the sim-to-real gap.</h2><p>Attention maps, patch-level PCA, and sim-to-real patch correspondence show how INVAR suppresses task-irrelevant appearance variation while preserving manipulation-relevant structure.</p></div>
+ <div class="switcher" role="group" aria-label="Representation analysis"><button type="button" data-analysis="attention" aria-pressed="true">Attention on robot video</button><button type="button" data-analysis="human" aria-pressed="false">Attention on human video</button><button type="button" data-analysis="pca" aria-pressed="false">Feature PCA</button><button type="button" data-analysis="correspondence" aria-pressed="false">Sim-to-real matches</button></div>
+ <div class="example-selector" id="analysis-examples" role="group" aria-label="Attention example"></div>
+ <p class="callout" id="human-attention-note" hidden><strong>No human video in INVAR’s simulation pretraining.</strong> On this human pouring sequence, INVAR concentrates attention on manipulated objects and contact regions. DINOv3 also attends to background appearance, while CAIP remains diffuse—even though CAIP was pretrained on egocentric human video.</p>
+ <div class="analysis-stage"><div class="analysis-labels" id="analysis-labels"><span>RGB input</span><span>DINOv3</span><span>CAIP</span><span>INVAR (ours)</span></div>
+ <figure class="analysis-film"><video id="analysis-video" muted loop playsinline preload="none" poster="assets/story/attention-robot.jpg?v=20261103-4" src="assets/story/attention-robot.mp4?v=20261103-4" aria-label="RGB input, DINOv3, CAIP, and INVAR (ours) attention on spray-bottle grasping"></video><div id="analysis-image" class="correspondence-columns" hidden role="img" aria-label="Simulation query patches matched to real-world patches: DINOv3, CAIP, and INVAR (ours), from left to right."><div class="match-dino"><img src="assets/story/correspondence.webp" alt="" loading="lazy"></div><div class="match-caip"><img src="assets/story/correspondence.webp" alt="" loading="lazy"></div><div class="match-invar"><img src="assets/story/correspondence.webp" alt="" loading="lazy"></div></div><div class="film-transport" id="analysis-transport"><button type="button" id="analysis-play" aria-label="Play visualization">▷ Play</button><input type="range" id="analysis-time" min="0" max="100" step="0.1" value="0" aria-label="Visualization playback position"><span id="analysis-clock">0:00</span><button type="button" id="analysis-speed" aria-label="Change visualization playback speed">2×</button><button type="button" id="analysis-expand" aria-label="Expand visualization to fullscreen">⤢</button></div><figcaption id="analysis-caption">Last-block attention on real robot footage.</figcaption></figure></div>
+ <p class="small">These visualizations show where the encoders respond; they do not measure what causes policy success. The real-robot and human videos were not used to adapt INVAR.</p>
+ </div>
+</section>
+<section id="method" class="section tinted"><div class="wrap">
+  <div class="section-heading"><span class="index">03 / SELF-DISTILLATION</span><h2>Self-distillation from <br>state-matched renders.</h2><p>A simulator can generate paired renders from the exact same underlying state. INVAR uses these pairs for asymmetric self-distillation: the student processes randomized views and learns to match an EMA teacher that receives only clean renders.</p></div>
+<div class="section-rail-layout">
+ <nav class="section-rail" aria-label="Method stages">
+ <a href="#match-state" aria-current="true"><div class="rail-card-title"><span>1</span><strong>Match the state</strong></div><div class="rail-thumbnails"><img src="assets/story/chess-v1-top.webp" alt=""><img src="assets/story/chess-clean-top.webp" alt=""></div><small>Randomized ↔ clean</small></a>
+ <a href="#freeze-reuse"><div class="rail-card-title"><span>3</span><strong>Freeze and reuse</strong></div><div class="rail-mini-pipeline"><b>❄ INVAR</b><i>→</i><b>Policy</b></div><small>Train once. Reuse across tasks.</small></a>
+ <a href="#data"><div class="rail-card-title"><span>↗</span><strong>Pretraining data</strong></div><div class="rail-thumbnails"><img src="assets/story/data-dex.webp" alt=""><img src="assets/story/data-gripper.webp" alt=""><img src="assets/story/data-humanoid.webp" alt=""></div><small>Embodiments · views · tasks</small></a>
+ </nav>
+ <div class="method-panels" id="distill-stage">
+    <div class="method-scene" id="match-state" data-scene="0" role="group" aria-label="State-matched renders and INVAR features">
+      <div class="method-panel-heading"><h3><span>1</span> Match the state</h3></div>
+      <p class="method-panel-copy">The same state, with two appearances. The student learns to ignore changes in appearance and match the teacher’s features.</p>
+      <div class="state-match-canvas">
+        <svg class="state-connectors" aria-hidden="true"><defs><marker id="state-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto-start-reverse"><path d="M0,0 L6,3 L0,6" fill="#cdbb83"/></marker></defs><path id="state-random-path" marker-end="url(#state-arrow)"/><path id="state-clean-path" marker-end="url(#state-arrow)"/><path id="state-ema-path" marker-end="url(#state-arrow)"/></svg><span class="state-ema-label" id="state-ema-label">EMA update</span>
+        <div class="shared-state"><span>SIMULATOR</span><strong>Same state <i>s</i></strong></div>
+        <div class="state-branches">
+          <div class="state-branch randomized">
+            <div class="appearance-control"><button type="button" class="text-button" id="variation">Change appearance ↻</button></div>
+            <div class="render-heading"><span class="node-label">Randomized render</span><p class="randomization-labels"><em>Random</em> lighting · materials · table texture · background</p></div>
+            <div class="camera-set"><figure><img id=student-image src="assets/story/chess-v1-top.webp" alt="Head camera: randomized view of the same chess state" width="640" height="480"><figcaption>Head camera</figcaption></figure><figure><img id=student-left src="assets/story/chess-v1-left.webp" alt="Left wrist: randomized view of the same chess state" width="640" height="480"><figcaption>Left wrist</figcaption></figure><figure><img id=student-right src="assets/story/chess-v1-right.webp" alt="Right wrist: randomized view of the same chess state" width="640" height="480"><figcaption>Right wrist</figcaption></figure></div>
+            <div class="short-down-arrow" aria-hidden="true">↓</div>
+            <div class="invariance-encoder student"><strong>Student</strong><span class="network-symbol">f<sub>θ</sub></span><small>INVAR encoder</small></div>
+            <div class="student-probe"><span aria-hidden="true">↳</span><strong id="state-probe-target">Stop gradient</strong><span class="probe-arrow" aria-hidden="true">→</span><span>Action probe</span></div>
+          </div>
+          <div class="state-branch clean">
+            <div class="appearance-control" aria-hidden="true"></div>
+            <div class="render-heading"><span class="node-label">Clean render</span><p class="render-description">Nominal simulation appearance</p></div>
+            <div class="camera-set"><figure><img  src="assets/story/chess-clean-top.webp" alt="Head camera: clean view of the same chess state" width="640" height="480"><figcaption>Head camera</figcaption></figure><figure><img  src="assets/story/chess-clean-left.webp" alt="Left wrist: clean view of the same chess state" width="640" height="480"><figcaption>Left wrist</figcaption></figure><figure><img  src="assets/story/chess-clean-right.webp" alt="Right wrist: clean view of the same chess state" width="640" height="480"><figcaption>Right wrist</figcaption></figure></div>
+            <div class="short-down-arrow" aria-hidden="true">↓</div>
+            <div class="invariance-encoder teacher"><strong>Teacher</strong><span class="network-symbol">f<sub>θ̄</sub></span><small>EMA encoder</small></div>
+          </div>
+        </div>
+        <div class="encoded-feature-panel">
+          <h4>Encoded features</h4>
+          <div class="chess-pca-heading"><strong>INVAR patch features, visualized with PCA</strong><span>Same state · shared color scale</span></div>
+          <div class="chess-pca-pair"><div class="chess-pca-group pca-randomized" aria-label="Randomized chess features"><div class="pca-bubble-heading"><strong>z<sub>randomized</sub></strong><span>Randomized render</span></div><div class="camera-set"><figure><img id="student-pca-top" src="assets/story/chess-v1-top-pca.webp" alt="INVAR PCA: head camera, randomized appearance 1" width="640" height="480"><figcaption>Head camera</figcaption></figure><figure><img id="student-pca-left" src="assets/story/chess-v1-left-pca.webp" alt="INVAR PCA: left wrist, randomized appearance 1" width="640" height="480"><figcaption>Left wrist</figcaption></figure><figure><img id="student-pca-right" src="assets/story/chess-v1-right-pca.webp" alt="INVAR PCA: right wrist, randomized appearance 1" width="640" height="480"><figcaption>Right wrist</figcaption></figure></div></div><div class="pca-similarity" aria-label="Similar encoded features"><span aria-hidden="true">⟷</span><small>Similar<br>features</small></div><div class="chess-pca-group pca-clean" aria-label="Clean chess features"><div class="pca-bubble-heading"><strong>z<sub>clean</sub></strong><span>Clean render</span></div><div class="camera-set"><figure><img src="assets/story/chess-clean-top-pca.webp" alt="INVAR PCA: head camera, clean appearance" width="640" height="480"><figcaption>Head camera</figcaption></figure><figure><img src="assets/story/chess-clean-left-pca.webp" alt="INVAR PCA: left wrist, clean appearance" width="640" height="480"><figcaption>Left wrist</figcaption></figure><figure><img src="assets/story/chess-clean-right-pca.webp" alt="INVAR PCA: right wrist, clean appearance" width="640" height="480"><figcaption>Right wrist</figcaption></figure></div></div></div>
+          <p class="chess-pca-caption">One shared PCA basis and color scale across all 27 clean and randomized camera views.</p>
+        </div>
+      </div>
+      <p class="method-panel-copy method-footer">The action probe reads detached student features to select a checkpoint; it does not update the encoder.</p>
+    </div>
+    <div class="method-scene" id="freeze-reuse" data-scene="2" role="group" aria-label="A frozen encoder connects clean simulation training to real-world deployment">
+      <div class="method-panel-heading"><h3><span>3</span> Freeze and reuse</h3></div><p class="method-panel-copy">Freeze INVAR after pretraining, then train each new policy on clean simulation images.</p>
+      <div class="reuse-training"><figure><span class="node-label">CLEAN SIMULATION</span><img src="assets/story/clean-bottles.webp" alt="Clean simulation policy-training input"><figcaption>New downstream task</figcaption></figure><div class="flow-edge"><i></i></div><div class="network-block frozen"><span class="snowflake">❄</span><strong>INVAR</strong><small>FROZEN ENCODER</small></div><div class="flow-edge"><i></i></div><div class="network-block train-policy"><span>π</span><strong>Policy</strong><small>TRAIN IN SIMULATION</small></div></div>
+      <div class="deployment-arrow"><span>Same frozen representation</span><i>↓</i></div>
+      <div class="reuse-deploy"><span class="node-label">ZERO-SHOT REAL-WORLD DEPLOYMENT</span><div><video data-rollout-autoplay controls muted loop playsinline preload="none" poster="assets/story/invar-pour.jpg" src="assets/story/invar-pour.mp4" aria-label="Dexterous pouring deployment with the frozen encoder"></video><video data-rollout-autoplay controls muted loop playsinline preload="none" poster="assets/story/invar-bottles.jpg" src="assets/story/invar-bottles.mp4?v=20261020-2" aria-label="Bimanual deployment with the frozen encoder"></video></div></div>
+    </div>
+  <details><summary>Full training pipeline and technical details</summary><figure><img src="assets/pipeline.jpg" alt="INVAR pipeline: randomized student and clean EMA teacher with CLS loss and a detached action probe" loading="lazy"><figcaption>The student receives randomized crops and matches the teacher’s outputs on clean crops using a CLS self-distillation loss. An exponential moving average of the student weights updates the teacher. We stop gradients through the teacher and use a separate linear action probe to choose checkpoints.</figcaption></figure><p>We fine-tune DINOv3 ViT-S+/16 (28.7M parameters) with two teacher crops, eight student crops, and 65,536 prototypes. Training uses teacher centering, sharpening, and EMA updates, with no task labels or rewards in the distillation loss.</p></details>
+</div></div>
+ <div id="data" class="method-data">
+ <div class="section-heading"><span class="index">THE PRETRAINING DATA</span><p>We pretrain on approximately 6.3 million clean–randomized image pairs across three simulated embodiments: dexterous hand, parallel gripper, and humanoid. The corpus includes diverse tasks and camera views, with no task labels required for representation learning.</p></div>
+<div class="section-rail-layout data-rail-layout"><nav class="section-rail" aria-label="Pretraining data"><a href="#data-embodiments" aria-current="true"><div class="rail-card-title"><strong>Across embodiments</strong></div><div class="rail-thumbnails"><img src="assets/story/data-dex.webp" alt=""><img src="assets/story/data-gripper.webp" alt=""><img src="assets/story/data-humanoid.webp" alt=""></div></a><a href="#data-views"><div class="rail-card-title"><strong>Across views</strong></div><div class="rail-thumbnails"><img src="assets/story/data-head.webp" alt=""><img src="assets/story/data-wrist.webp" alt=""></div></a><a href="#data-tasks"><div class="rail-card-title"><strong>Across tasks</strong></div><div class="rail-thumbnails"><img src="assets/story/data-sweep.webp" alt=""><img src="assets/story/data-objects.webp" alt=""></div></a></nav><div class="data-panels">
+ <section id="data-embodiments" class="data-panel"><h3>Across embodiments</h3> <div  class="gallery">
+ <figure><img src="assets/story/data-dex.webp" alt="Simulated dexterous hand grasping an object" loading="lazy"><figcaption><strong>Dexterous hand</strong></figcaption></figure>
+ <figure><img src="assets/story/data-gripper.webp" alt="Simulated bimanual grippers manipulating dishes" loading="lazy"><figcaption><strong>Bimanual parallel gripper</strong></figcaption></figure>
+ <figure><img src="assets/story/data-humanoid.webp" alt="Humanoid simulation in a furnished scene" loading="lazy"><figcaption><strong>Humanoid loco-manipulation</strong></figcaption></figure>
+ </div>
+</section>
+ <section id="data-views" class="data-panel"><h3>Across views</h3><div class="gallery views"><figure><img src="assets/story/data-wrist.webp" alt="Simulated wrist-camera view" loading="lazy"><figcaption><strong>Wrist camera</strong></figcaption></figure><figure><img src="assets/story/data-head.webp" alt="Simulated head-camera view" loading="lazy"><figcaption><strong>Head camera</strong></figcaption></figure></div></section>
+ <section id="data-tasks" class="data-panel"><h3>Across tasks</h3><div class="gallery tasks"><div class="pretraining-task-column"><h3>Bimanual parallel-gripper tasks</h3><div class="bimanual-task-grid"><figure><img src="assets/story/data-sweep.webp" alt="Sweep in simulation" loading="lazy"><figcaption><strong>Sweep</strong></figcaption></figure><figure><img src="assets/story/clean-chess.webp" alt="Chess in simulation" loading="lazy"><figcaption><strong>Chess</strong></figcaption></figure><figure><img src="assets/story/data-dishrack.webp" alt="Dish rack in simulation" loading="lazy"><figcaption><strong>Dish rack</strong></figcaption></figure><figure><img src="assets/story/data-spell.webp" alt="Spell in simulation" loading="lazy"><figcaption><strong>Spell</strong></figcaption></figure><figure><img src="assets/story/data-pour.webp" alt="Pour in simulation" loading="lazy"><figcaption><strong>Pour</strong></figcaption></figure></div></div><div class="pretraining-task-column"><h3>Dexterous grasping</h3><div class="dex-task-pair"><figure><img src="assets/story/data-objects.webp" alt="The 20 dexterous grasping pretraining objects" loading="lazy"><figcaption><strong>20 pretraining objects</strong></figcaption></figure><figure><img class="sharpa-still" src="assets/story/sharpa-hand.webp" alt="Sharpa dexterous hand" loading="lazy" width="232" height="268"><figcaption><strong>Sharpa hand</strong></figcaption></figure></div></div></div></section>
+ </div></div><p class="small">None of the evaluation objects appear in encoder pretraining. Pouring, bottle-in-bin, and mug flipping are also new tasks. Humanoid data is used only for pretraining.</p>
+ </div></div></section>
+<section id="results" class="section tinted">
+ <div class="wrap">
+ <div class="section-heading"><span class="index">04 / ZERO-SHOT TRANSFER</span><h2>Zero-shot transfer to <br>unseen objects and tasks.</h2><p>Policies use a frozen INVAR encoder and train only on nominal simulation data. We evaluate zero-shot transfer to unseen objects across both embodiments; pouring and the parallel-gripper tasks also test unseen manipulation motions.</p></div>
+<div id="robustness" class="results-subsection robustness-lead">
+ <div class="section-heading"><h2>Robust to lighting and surface changes.</h2></div>
+ <div class="switcher" role="group" aria-label="Robustness task"><button type="button" data-robust="watering" aria-pressed="true">Watering can</button><button type="button" data-robust="spray" aria-pressed="false">Spray bottle</button><button type="button" data-robust="mug" aria-pressed="false">Mug flipping</button><button type="button" data-robust="bottles" aria-pressed="false">Bottles into bin</button></div>
+ <figure class="wide-film"><div class="robust-viewport"><video data-rollout-autoplay id="robust-video" muted loop playsinline preload="none" poster="assets/story/robust-watering-shuffled.jpg" src="assets/story/robust-watering-shuffled.mp4" aria-label="Watering-can grasping trials with varied lighting and surfaces, in shuffled order"></video></div><div class="robust-controls"><button type="button" id="robust-replay">Replay zoom ↻</button><button type="button" id="robust-motion" aria-pressed="true">Pause videos Ⅱ</button></div><figcaption id="robust-caption">Four contrasting conditions, then all 25 trials in shuffled order.</figcaption></figure>
+</div>
+ <h3 class="task-results-heading">Transfer to unseen objects and tasks</h3>
+ <div class="switcher platform-switcher" role="group" aria-label="Robot embodiment"><button type="button" data-platform="dex" aria-pressed="true">Dexterous hand</button><button type="button" data-platform="bimanual" aria-pressed="false">Bimanual gripper</button></div>
+ <div class="result-task-selector" id="result-tasks" role="group" aria-label="Dexterous-hand tasks"></div>
+ <div id="grasp-selector" class="object-selector" role="group" aria-label="Unseen grasping object" hidden>
+<button type="button" data-object="spray" aria-pressed="true"><img src="assets/story/grasp-spray.jpg" alt=""><span>Spray bottle</span></button><button type="button" data-object="glass" aria-pressed="false"><img src="assets/story/grasp-glass.jpg" alt=""><span>Wine glass</span></button><button type="button" data-object="watering" aria-pressed="false"><img src="assets/story/grasp-watering.jpg" alt=""><span>Watering can</span></button><button type="button" data-object="tape" aria-pressed="false"><img src="assets/story/grasp-tape.jpg" alt=""><span>Tape</span></button><button type="button" data-object="hammer" aria-pressed="false"><img src="assets/story/grasp-hammer.jpg" alt=""><span>Hammer</span></button>
+ </div>
+ <div class="result-layout">
+  <figure class="result-film"><video data-rollout-autoplay id="result-video" controls muted loop playsinline preload="none" poster="assets/story/invar-pour.jpg" src="assets/story/invar-pour.mp4" aria-label="INVAR pours wine into a bowl"></video><figcaption id="result-video-caption">Sharpa hand on a Tianji arm.</figcaption></figure>
+  <div class="result-copy" aria-live="polite"><span class="overline" id="result-tag">UNSEEN OBJECT AND TASK</span><h3 id="result-title">Pour wine into a bowl</h3><p id="result-description">Neither these objects nor the pouring task appears in encoder pretraining.</p><div id="result-scores"><span class="chart-label">Real-world success rate</span><div class="score"><div><b>INVAR</b><strong id="ours-score">58%</strong></div><div class="track"><span id="ours-bar" style="width:58%"></span></div></div><div class="score baseline"><div><span id="baseline-name">DINOv3 with DR</span><strong id="baseline-score">25%</strong></div><div class="track"><span id="baseline-bar" style="width:25%"></span></div></div><p class="small" id="sample-note">24 real-world rollouts per method. Strongest evaluated baseline for this task.</p></div></div>
+ </div>
+ <details><summary>Full results and evaluation setup</summary><figure><img src="assets/story/results.webp" alt="Success rates for all six encoder and policy-training settings across real, nominal simulation, and randomized simulation evaluations" loading="lazy" width="2814" height="714"><figcaption>Paper Fig. 4. We compare encoders, frozen versus fine-tuned features, and clean versus randomized policy-training images. INVAR uses a frozen encoder and clean images.</figcaption></figure><p>For grasping, we run 25 trials on each of five objects: 125 trials per method. Each other task has 24 real-world trials per method. Simulation tests use 50 episodes per checkpoint. All methods use the same behavior-cloning policy architecture.</p><div class="table-scroll"><table><caption>Real-world suite means reported in the paper</caption><thead><tr><th>Evaluation suite</th><th>INVAR</th><th>Strongest suite baseline</th></tr></thead><tbody><tr><td>Dexterous manipulation (five grasp objects + pouring)</td><td>0.61</td><td>0.30</td></tr><tr><td>Bimanual parallel gripper (bottles + mug)</td><td>0.65</td><td>0.32</td></tr></tbody></table></div><p class="small">The table reports suite averages; the charts above compare each task with its strongest tested baseline. For pouring, we compare with DINOv3 trained with DR.</p></details>
+ <div id="convergence" class="results-convergence">
+ <div class="section-heading"><h2>Downstream policies <br>also converge faster.</h2><p>INVAR also accelerates downstream policy learning, reaching 90% of peak performance about 1.5× faster than the fastest baseline.</p></div>
+ <div class="convergence-layout"><div class="convergence-stat"><strong>1.5<span>×</span></strong><p>faster convergence</p><small>The threshold is 90% of each method’s own peak success.</small></div><div class="convergence-plots"><div><h3>Nominal simulation</h3><div class="epoch-row ours"><span>INVAR</span><div><i style="width:48%"></i></div><b>29.4</b></div><div class="epoch-row"><span>Fastest baseline</span><div><i style="width:73%"></i></div><b>44.6</b></div></div><div><h3>Simulation with visual DR</h3><div class="epoch-row ours"><span>INVAR</span><div><i style="width:45%"></i></div><b>27.6</b></div><div class="epoch-row"><span>Fastest baseline</span><div><i style="width:63%"></i></div><b>38.4</b></div></div><p class="small">Mean training epoch to 90% of each method’s peak success ↓<br>Averaged across five training runs. Paper Table 1.</p></div></div>
+</div>
+
+ </div>
+</section>
+
+
+
+<section id="scaling" class="section wrap">
+ <div class="section-heading"><span class="index">05 / SCALING AND ABLATIONS</span><h2>How pretraining data <br>affects real-world transfer.</h2><p>At a fixed pretraining budget, broader embodiment diversity improves real-world transfer. Increasing task and object diversity also helps, and real-world success scales with the number of pretraining pairs.</p></div>
+ <figure class="scaling-overview"><img src="assets/story/scaling-overview.webp" alt="Scaling results: broader embodiment, object, and task diversity and more pretraining pairs improve real-world success." width="2323" height="672" loading="lazy"><figcaption>Real-world transfer improves with more diverse simulation data and more pretraining pairs. The chart summarizes the ablations; the breakdown below shows each embodiment separately.</figcaption></figure>
+
+ <div class="switcher" role="group" aria-label="Scaling ablation"><button type="button" data-scale="diversity" aria-pressed="true">Embodiment diversity</button><button type="button" data-scale="tasks" aria-pressed="false">Task diversity</button><button type="button" data-scale="size" aria-pressed="false">Dataset size</button></div>
+ <div class="scaling-data" id="scaling-data" aria-live="polite">
+  <figure id="scaling-embodiments"><img src="assets/story/scaling-embodiments.webp" alt="Each embodiment-diversity experiment uses 6.3 million pairs. The full mix is 70% dexterous hand, 29.7% parallel gripper, and 0.3% humanoid." width="1449" height="689" loading="lazy"><figcaption>The same 6.3 million pretraining pairs, drawn from different combinations of embodiments.</figcaption></figure>
+  <div id="scaling-task-sets" hidden><figure><h3>5 → 10 → 20 objects</h3><img src="assets/story/scaling-objects.webp" alt="Nested dexterous grasping datasets: 5 objects in the darkest region, 10 in the middle region, and all 20 in the outer region." width="1046" height="858" loading="lazy"><figcaption>Each larger grasping set includes the objects in the smaller sets.</figcaption></figure><figure><h3>2 → 5 tasks</h3><img src="assets/story/scaling-tasks.webp" alt="The two-task subset contains pouring and sweeping; the five-task set adds dish rack, spell blocks, and chess." width="2174" height="1258" loading="lazy"><figcaption>Start with pouring and sweeping, then add dish rack, spell blocks, and chess.</figcaption></figure></div>
+ </div>
+ <div class="scaling-charts" id="scaling-charts" aria-live="polite"></div>
+ <p class="small"><span id="scaling-source">Paper Table 2.</span> These ablations use 12 real-world trials per task: hammer and spray-bottle grasping, and bottles into a bin. They are separate from the main benchmark.</p>
+ <details><summary>More ablation results</summary><div class="findings"><div><h3>Cross-embodiment diversity</h3><p>With one robot type, increasing the grasping set from 5 to 20 objects raises success from 54% to 63%. Increasing gripper tasks from 2 to 5 raises success from 50% to 58%. Adding data from other robot types gives a larger gain.</p></div><div><h3>The asymmetric objective</h3><p>With the same data, architecture, and training budget, giving randomized images to both networks lowers real-world success from 84% to 42%. Keeping the teacher’s view clean works better.</p></div></div></details>
+ <div class="closing"><h3>Visual randomization as a one-time pretraining cost.</h3><p>Generate the randomized simulation corpus once, pretrain INVAR, and reuse the frozen encoder across downstream policies trained on nominal simulation.</p><p class="small">INVAR addresses differences in appearance, not geometry, dynamics, or actuation. We evaluate it with behavior-cloning policies.</p></div>
+</section>
+<section id="tradeoffs" class="section tinted">
+ <div class="wrap">
+  <div class="section-heading"><span class="index">06 / TRADE-OFFS</span><h2>What does INVAR lose?</h2><p>INVAR trades some general vision performance for features that are more consistent across appearance changes. Adapting DINOv3 for manipulation lowers its scores on general vision benchmarks. We expect training on larger datasets to improve general vision performance.</p></div>
+  <div class="table-scroll vision-tradeoffs"><table>
+   <caption>General vision and appearance invariance with frozen features</caption>
+   <thead><tr><th scope="col">Benchmark and metric</th><th scope="col">DINOv3</th><th scope="col">INVAR (ours)</th><th scope="col">Change</th></tr></thead>
+   <tbody>
+    <tr><th scope="row">ImageNet-1k <span>Linear top-1 accuracy ↑</span></th><td>78.7%</td><td>72.2%</td><td>−6.5 pp</td></tr>
+    <tr><th scope="row">NYU-Depth <span>Depth RMSE ↓</span></th><td>0.449 m</td><td>0.513 m</td><td>+0.064 m</td></tr>
+    <tr><th scope="row">NYU-Depth <span>Depth accuracy δ₁ ↑</span></th><td>0.850</td><td>0.796</td><td>−0.054</td></tr>
+    <tr><th scope="row">DAVIS <span>Video label propagation, J&amp;F ↑</span></th><td>69.4</td><td>60.8</td><td>−8.6 points</td></tr>
+    <tr class="matching-gain"><th scope="row">Clean-to-randomized patch matching <span>Patch-matching accuracy ↑</span></th><td>0.763</td><td><strong>0.898</strong></td><td>+0.135</td></tr>
+   </tbody>
+  </table></div>
+  <p class="small">Source: Appendix C.2.1, Table 9. Both encoders stay frozen during these probes; DINOv3 is the original pretrained encoder. ↑ Higher is better. ↓ Lower is better. pp = percentage points.</p>
+ </div>
+</section>
+</main>
+<footer class="wrap"><a class="wordmark" href="#top">INVAR <span>↑</span></a><p>Invar is a nickel–iron alloy that holds its dimensions across a wide temperature range.<br>INVAR learns representations that remain consistent across rendering conditions.</p><p class="small"><a href="https://github.com/xinyunsunshine/INVAR">INVAR project repository ↗</a></p></footer>
+</body>
+</html>
